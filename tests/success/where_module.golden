@@ -1,0 +1,2 @@
+purity: pure
+∃!5.{S={M:{t(=unit):Type}}, x(=!5):unit}

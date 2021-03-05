@@ -1,0 +1,96 @@
+@require: stdjareport
+@require: bnf
+
+let-math \bkind = ${\mathrm{\Omega}}
+let-math \sid = ${X_s}
+let-math \vid = ${X_v}
+let-math \tid = ${X_t}
+
+let-math \colon = ${\mathord{:}}
+let-math \apply x y = ${#x\ #y}
+let-math \seal = ${\mathbin{:>}}
+let-math \val x = ${\text!{\code(`val`);}\ #x}
+let-math \type x = ${\text!{\code(`type`);}\ #x}
+let-math \module x = ${\text!{\code(`module`);}\ #x}
+let-math \signature x = ${\text!{\code(`signature`);}\ #x}
+let-math \include x = ${\text!{\code(`include`);}\ #x}
+let-math \overline x =
+  let f ctx =
+    let ib = embed-math ctx x in
+    let ps = (0pt, 0pt, 2pt, 0pt) in
+    let thickness = 0.3pt in
+    let d (x, y) w h _ = [Gr.line (x, y +' h) (x +' w, y +' h) |> stroke thickness Color.black] in
+    inline-frame-outer ps d ib
+  in
+  text-in-math MathOrd f
+let-math \wheretype = ${\mathrel{\text!{\code(`where type`);}}}
+let-math \whereval = ${\mathrel{\text!{\code(`where val`);}}}
+let-math \wheremodule = ${\mathrel{\text!{\code(`where module`);}}}
+let-math \with = ${\mathbin{\&}}
+let-math \unit = ${\text!{\code(`unit`);}}
+let-math \case x y = ${\text!{\code(`case`);} \paren{#x, #y}}
+let-math \sig = ${\mathrm{\Sigma}}
+let-math \asig = ${\mathrm{\Xi}}
+let-math \pack x = ${\text!{\code(`pack`);}\ #x}
+let-math \unpack x = ${\text!{\code(`unpack`);}\ #x}
+let-math \I = ${\text!{\code(`I`);}}
+let-math \P = ${\text!{\code(`P`);}}
+let-math \like x = ${\text!{\code(`like`);}\ #x}
+
+in
+
+document (|
+  title = {seqmod};
+  author = {elpinal};
+|) '<
+  +chapter {External language} <
+    +p {
+      \align
+        [ ${|\text!{Module identifers}   ||| X|}
+        ; ${|\text!{Signature identifers}||| \sid|}
+        ; ${|\text!{Value identifers}    ||| \vid|}
+        ; ${|\text!{Type identifers}     ||| \tid|}
+        ];
+
+      Let ${\delta} range over ${\set{s, v, t}}.
+
+      \BNFs
+        [ (${K}, [${|\bkind | \bkind \rightarrow K|}])
+        ; (${T}, [${|P_t | \pack{S} | \alpha | \lambda \alpha. T | \apply{T}{T} | T \rightarrow T | \unit | T \with T | T + T|}])
+        ; (${E}, [${|P_v | \pack{M : S} | x | \lambda x. E | \paren{} | \paren{E, E} | \iota_1 E | \iota_2 E|}; ${|\apply{E}{E} | \case{E}{\paren{}. E} | \pi_1 E | \pi_2 E | \case{E}{\iota_1 x. E \| \iota_2 x. E}|}])
+        ; (${P_\delta}, [${|X_\delta | M.X_\delta|}])
+        ; (${P_m}, [${|M|}])
+        ];
+
+      \BNFs
+        [ (${M}, [${|X | \brace{B} | M.X | \lambda X \colon S. M | \apply{X}{X} | X \seal S | \unpack{E:S}|}])
+        ; (${B}, [${|\val{\vid = E} | \type{\tid = T} | \module{X = M} | \signature{\sid = S}|}; ${ | \include{M} | \epsilon | B\; B|}])
+        ; (${S}, [${|P_s | \brace{D} | \paren{X : S} \rightarrow S | \paren{X:S} \Rightarrow S | S \wheretype \overline{X}.\tid = T|} ; ${| S \whereval \overline{X}.\vid = P_v | S \wheremodule \overline{X}.X = P_m | \like{P_m}|}])
+        ; (${D}, [${|\val{\vid : \forall \overline{\alpha}. T} | \val{\vid = P_v} | \type{\tid = T} | \type{\tid : K} | \module{X : S}|}; ${|\module{X = P_m} | \signature{\sid = S} | \include{S} | \epsilon | D\; D|}])
+        ];
+    }
+
+    +section {Semantic signatures} <
+      +p {
+        \BNFs
+          [ (${\sig}, [${|\sqbracket{= \pi : \forall \overline{\alpha}. \tau} | \sqbracket{= \tau : \kappa} | \sqbracket{= \asig} | \brace{\overline{l : \sig}} | \forall \overline{\alpha}. \sig \rightarrow_\I \asig | \forall \overline{\alpha}. \sig \rightarrow_\P \sig|}])
+          ; (${\asig}, [${|\exists \overline{\alpha}. \sig|}])
+          ; (${\phi}, [${|\I | \P|}])
+          ; (${\pi}, [${|\alpha | \apply{\pi}{\overline{\tau}}|}])
+          ];
+      }
+    >
+  >
+
+  +chapter {Internal language} <
+    +p {
+      In addition to the constructs of ${L_{ML}^N},
+      we use ${\otimes}-records to represent structures.
+
+      \BNFs
+        [ (${v}, [${|... | \brace{l_i = v_i}_i|}])
+        ; (${k^+}, [${|... | \mu \brace{l_i = x}_i. c|}])
+        ];
+    }
+  >
+>

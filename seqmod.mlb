@@ -1,0 +1,38 @@
+$(SML_LIB)/basis/basis.mlb
+cmlib/cmlib.mlb
+wbt/wbt.mlb
+
+lwd.sml
+
+pretty.sml
+identifier.sml
+label.sml
+variable.sml
+
+basis EL = bas
+  syntax.sml
+end
+
+basis P = bas
+  lexer/lexer.mlb
+  position.sml
+  token.sml
+  lexer.sml
+  make_parser.sml
+
+  open EL
+  parser.sml
+end
+
+basis IL = bas
+  product_comonad.sml
+  internal.sml
+  env.sml
+end
+
+open EL IL
+elaboration.sml
+
+open P
+seqmod.sml
+main.sml

@@ -1,0 +1,186 @@
+sml
+name MakeParser
+
+terminal LOWER_IDENT of string
+terminal UPPER_IDENT of string
+terminal QUOTE_IDENT of string
+
+terminal LPAREN of left_ref
+terminal RPAREN
+terminal LBRACE of left_ref
+terminal RBRACE
+
+terminal LPAREN_PROJ
+terminal LBRACE_PROJ
+
+terminal RARROW precr 20
+terminal RDARROW
+terminal AMPERSAND
+terminal PLUS
+terminal MINUS
+terminal COLON
+terminal COLON_GT
+terminal COMMA
+terminal DOT
+terminal EQUAL
+terminal BAR
+
+terminal PACK
+terminal UNPACK
+terminal FN
+terminal CASE
+terminal INL
+terminal INR
+terminal FST
+terminal SND
+terminal MODULE
+terminal SIGNATURE
+terminal VAL
+terminal TYPE
+terminal INCLUDE
+terminal WHERE
+terminal LIKE
+
+nonterminal Module : module =
+  1:ModuleBin                        => module_id
+  UNPACK 1:TermApp COLON 2:Signature => munpack
+  FN 1:UPPER_IDENT COLON 2:Signature RDARROW 3:Module => mabs
+
+nonterminal ModuleBin : module =
+  1:ModuleApp                      => module_id
+  1:ModuleBin COLON_GT 2:Signature => mseal
+
+nonterminal ModuleApp : module =
+  1:ModuleAtom             => module_id
+  1:ModuleApp 2:ModuleAtom => mapp
+
+nonterminal ModuleAtom : module =
+  LPAREN 1:Module RPAREN                                  => module_id
+  LPAREN_PROJ 1:Module RPAREN DOT 2:UPPER_IDENT 3:Projs   => mproj
+  LBRACE 1:Bindings RBRACE                                => mstruct
+  LBRACE_PROJ 1:Bindings RBRACE DOT 2:UPPER_IDENT 3:Projs => mstruct_proj
+  1:UPPER_IDENT 2:Projs                                   => mclassic_path
+
+nonterminal Projs : projs =
+  /* empty */               => projs_nil
+  DOT 1:UPPER_IDENT 2:Projs => projs_cons
+
+nonterminal Projs1 : projs1 =
+  DOT 1:UPPER_IDENT 2:Projs => projs1_cons
+
+nonterminal LProjs1 : projs1 =
+  DOT 1:LOWER_IDENT => lprojs1_singleton
+  DOT 1:UPPER_IDENT 2:LProjs1 => lprojs1_cons
+
+/* `Path` is always followed by `DOT` */
+nonterminal Path : module =
+  LPAREN_PROJ 1:Module RPAREN   => module_id
+  LBRACE_PROJ 1:Bindings RBRACE => path_struct
+  1:UPPER_IDENT                 => path_ident
+
+nonterminal LPath : lpath =
+  1:LOWER_IDENT      => lpath_ident
+  1:Path 2:LProjs1   => lpath_path
+
+nonterminal Bindings : binding_list =
+  /* empty */              => empty_bindings
+  1:Binding 2:Bindings     => cons_bindings
+
+nonterminal Binding : binding =
+  VAL 1:LOWER_IDENT EQUAL 2:Term             => bval
+  TYPE 1:LOWER_IDENT 2:TVars EQUAL 3:Type    => btype
+  MODULE 1:UPPER_IDENT EQUAL 2:Module        => bmodule
+  SIGNATURE 1:UPPER_IDENT EQUAL 2:Signature  => bsignature
+  INCLUDE 1:Module                           => binclude
+
+nonterminal Signature : signature_ =
+  1:SignatureWhere                                                  => signature_id
+  LIKE 1:ModuleApp                                                  => slike
+  LPAREN 1:UPPER_IDENT COLON 2:Signature RPAREN RARROW 3:Signature  => siarrow
+  LPAREN 1:UPPER_IDENT COLON 2:Signature RPAREN RDARROW 3:Signature => sparrow
+
+nonterminal SignatureWhere : signature_ =
+  1:SignatureAtom                                             => signature_id
+  1:SignatureWhere WHERE TYPE 2:TypeLoc 3:TVars EQUAL 4:Type  => swhere_type
+  1:SignatureWhere WHERE VAL 2:ValueLoc EQUAL 3:LPath  => swhere_val
+  1:SignatureWhere WHERE MODULE 2:ModuleLoc EQUAL 3:ModuleApp => swhere_module
+
+nonterminal SignatureAtom : signature_ =
+  LPAREN 1:Signature RPAREN => signature_id
+  LBRACE 1:Decls RBRACE => sstruct
+  1:UPPER_IDENT         => sident
+  1:Path 2:Projs1       => spath
+
+nonterminal TypeLoc : type_location =
+  1:LOWER_IDENT               => type_location_ident
+  1:UPPER_IDENT DOT 2:TypeLoc => type_location_proj
+
+nonterminal ValueLoc : value_location =
+  1:LOWER_IDENT               => value_location_ident
+  1:UPPER_IDENT DOT 2:ValueLoc => value_location_proj
+
+nonterminal ModuleLoc : module_location =
+  1:UPPER_IDENT                 => module_location_ident
+  1:UPPER_IDENT DOT 2:ModuleLoc => module_location_proj
+
+nonterminal Decls : decl_list =
+  /* empty */    => empty_decls
+  1:Decl 2:Decls => cons_decls
+
+nonterminal Decl : decl =
+  VAL 1:LOWER_IDENT 2:TVars COLON 3:Type            => dval
+  VAL 1:LOWER_IDENT EQUAL 2:LPath                 => dvaltrans
+  TYPE 1:LOWER_IDENT 2:TVars                     => dtype
+  TYPE 1:LOWER_IDENT 2:TVars EQUAL 3:Type        => dtypetrans
+  MODULE 1:UPPER_IDENT COLON 2:Signature     => dmodule
+  MODULE 1:UPPER_IDENT EQUAL 2:Module        => dmoduletrans
+  SIGNATURE 1:UPPER_IDENT EQUAL 2:Signature         => dsignature
+  INCLUDE 1:Signature                               => dinclude
+
+nonterminal Term : term =
+  1:TermApp => term_id
+  CASE 1:TermApp RDARROW LBRACE LPAREN RPAREN RDARROW 2:Term RBRACE => vcaseunit
+  PACK 1:ModuleApp COLON 2:Signature => vpack
+  FN 1:LOWER_IDENT RDARROW 2:Term => vabs
+
+nonterminal TermApp : term =
+  1:TermAtom => term_id
+  1:TermApp 2:TermAtom => vapp
+  INL 1:TermAtom => vinl
+  INR 1:TermAtom => vinr
+  FST 1:TermAtom => vfst
+  SND 1:TermAtom => vsnd
+
+nonterminal TermAtom : term =
+  LPAREN RPAREN => vunit
+  LPAREN 1:Term RPAREN => term_id
+  LPAREN 1:Term COMMA 2:Term RPAREN => vprod
+  1:LPath      => vpath
+
+nonterminal Type : tycon =
+  1:TypeBin => type_id
+
+nonterminal TypeBin : tycon =
+  1:TypeApp                  => type_id
+  1:TypeBin RARROW 2:TypeBin => tarrow
+  1:TypeApp AMPERSAND 2:TypeApp => tprod
+  1:TypeApp PLUS 2:TypeApp      => tsum
+
+nonterminal TypeApp : tycon =
+  1:TypeAtom           => type_id
+  1:TypeApp 2:TypeAtom => tapp
+  PACK 1:SignatureAtom => tpack
+
+nonterminal TypeAtom : tycon =
+  1:TVar => tvar
+  LPAREN 1:Type RPAREN => type_id
+  1:LPath        => tpath
+
+nonterminal TVar : type_variable =
+  1:QUOTE_IDENT => quote_ident
+
+nonterminal TVars : type_variables =
+  /* empty */    => tvars_nil
+  1:TVar 2:TVars => tvars_cons
+
+start Module

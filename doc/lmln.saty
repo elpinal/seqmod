@@ -1,0 +1,215 @@
+@require: stdjareport
+@require: bnf
+@require: itemize
+@require: proof
+
+let-inline \lmln = {${L_{ML}^{N}}}
+let-inline \quote = embed-string `’`
+
+let f x y sub _ = match sub with
+  | Some(sub) -> ${#x_#sub^#y}
+  | None      -> ${#x^#y}
+let-math \n = math-pull-in-scripts MathOrd MathOrd (f ${A} ${-})
+let-math \p = math-pull-in-scripts MathOrd MathOrd (f ${A} ${+})
+let-math \n2 = math-pull-in-scripts MathOrd MathOrd (f ${B} ${-})
+let-math \with = ${\mathbin{\&}}
+let-math \up = ${\mathord{\uparrow}}
+let-math \down = ${\mathord{\downarrow}}
+let-math \imp = ${\supset}
+let-math \colon = ${\mathord{:}}
+let-math \env = ${\mathrm{\Gamma}}
+let-math \cjd c e x = ${#c : \paren{#e \vdash #x}}
+let-math \fjd e x y = ${#e \vdash #x : #y \;}
+let-math \ljd e x y z = ${#e \| #x : #y \vdash #z}
+let-math \lfjd e x y z = ${#e \;\ #x : #y \vdash #z}
+let-math \unit = ${\text!{\code(`unit`);}}
+let-math \fail = ${\text!{\code(`fail`);}}
+let-math \apply x y = ${#x\ #y}
+let-math \case x y = ${\text!{\code(`case`);} \paren{#x, #y}}
+
+in
+
+document (|
+  title = {\lmln;};
+  author = {elpinal};
+|) '<
+  +p {
+    We identify ${\alpha}-equivalent expressions and follow Barendregt\quote;s convention.
+  }
+
+  +p {
+    Intuitionistic.
+    Call-by-name.
+
+    \BNFs
+      [ (${\n}, [${|\alpha | \n \with \n | \p \imp \n | \up \p | \forall \alpha. \n|}])
+      ; (${\p}, [${|1 | \p \oplus \p | \down \n|}])
+      ];
+
+    Positive and negative variables are denoted by ${x} and ${u}, respectively.
+
+    \BNFs
+      [ (${e^-}, [${|u | \mu \star. c | \mu \paren{\pi_1 \star. c \| \pi_2 \star. c} | \mu \paren{x \cdot \star}. c | \mu \up \star. c | \mu \paren{\alpha \cdot \star}. c|}])
+      ; (${e^+}, [${|v | \mu \star. c|}])
+      ; (${v}, [${|x | \angle-bracket{} | \iota_1 v | \iota_2 v | \down e^-|}])
+      ; (${k^-}, [${|s | \mu u. c|}])
+      ; (${s}, [${|\star | \pi_1 s | \pi_2 s | v \cdot s | \up k^+ | \n \cdot s|}])
+      ; (${k^+}, [${|\star | \mu x. c | \mu \angle-bracket{}. c | \mu \paren{\iota_1 x. c \| \iota_2 x. c} | \mu \down u. c |}])
+      ; (${c}, [${|\angle-bracket{e^+ \| k^+} | \angle-bracket{e^- \| k^-} | \fail|}])
+      ];
+
+    \BNFs
+      [ (${\env}, [${|\epsilon | \env, x \colon \p | \env, u \colon \n|}])
+      ];
+
+    Typing judgments:
+    \listing {
+    * ${\tyjd{\env}{e^-}{\n}}
+    * ${\tyjd{\env}{e^+}{\p}}
+    * ${\fjd{\env}{v}{\p}}
+    * ${\ljd{\env}{k^-}{\n}{A}}
+    * ${\lfjd{\env}{s}{\n}{A}}
+    * ${\ljd{\env}{k^+}{\p}{A}}
+    * ${\cjd{c}{\env}{A}}
+    }
+  }
+
+  +p {
+    Negative terms:
+  }
+
+  +math-list (${
+    | \derive{||}{\tyjd{\env}{u}{\app{\env}{u}}}
+    | \derive{|\cjd{c}{\env}{\n}|}{\tyjd{\env}{\mu \star. c}{\n}}
+    | \derive{
+        | \cjd{c_1}{\env}{\n_1}
+        | \cjd{c_2}{\env}{\n_2}
+      |}{\tyjd{\env}{\mu \paren{\pi_1 \star. c_1 \| \pi_2 \star. c_2}}{\n_1 \with \n_2}}
+    | \derive{
+        | \cjd{c}{\env, x \colon \p}{\n}
+      |}{\tyjd{\env}{\mu \paren{x \cdot \star}. c}{\p \imp \n}}
+    | \derive{
+        | \cjd{c}{\env}{\p}
+      |}{\tyjd{\env}{\mu \up \star. c}{\up \p}}
+    | \derive{
+        | \cjd{c}{\env}{\n}
+      |}{\tyjd{\env}{\mu \paren{\alpha \cdot \star}. c}{\forall \alpha. \n}}
+  |});
+
+  +p {
+    Positive terms:
+  }
+
+  +math-list (${
+    | \derive{|\fjd{\env}{v}{\p}|}{\tyjd{\env}{v}{\p}}
+    | \derive{
+        | \cjd{c}{\env}{\p}
+      |}{\tyjd{\env}{\mu \star. c}{\p}}
+  |});
+
+  +p {
+    Positive values:
+  }
+
+  +math-list (${
+    | \derive{||}{\fjd{\env}{x}{\app{\env}{x}}}
+    | \derive{||}{\fjd{\env}{\angle-bracket{}}{1}}
+    | \derive{
+        | \fjd{\env}{v}{\p_i}
+      |}{\fjd{\env}{\iota_i v}{\p_1 \oplus \p_2}}
+    | \derive{
+        | \tyjd{\env}{e^-}{\n}
+      |}{\fjd{\env}{\down e^-}{\down \n}}
+  |});
+
+  +p {
+    Negative coterms:
+  }
+
+  +math-list (${
+    | \derive{|\lfjd{\env}{s}{\n}{A}|}{\ljd{\env}{s}{\n}{A}}
+    | \derive{
+        | \cjd{c}{\env, u \colon \n}{A}
+      |}{\ljd{\env}{\mu u. c}{\n}{A}}
+  |});
+
+  +p {
+    Negative covalues:
+  }
+
+  +math-list (${
+    | \derive{|}{\lfjd{\env}{\star}{\n}{\n}}
+    | \derive{
+        | \lfjd{\env}{s}{\p_i}{A}
+      |}{\lfjd{\env}{\pi_i s}{\p_1 \with \p_2}{A}}
+    | \derive{
+        | \fjd{\env}{v}{\p}
+        | \lfjd{\env}{s}{\n}{A}
+      |}{\lfjd{\env}{v \cdot s}{\p \imp \n}{A}}
+    | \derive{
+        | \ljd{\env}{k^+}{\p}{A}
+      |}{\lfjd{\env}{\up k^+}{\up \p}{A}}
+    | \derive{
+        | \lfjd{\env}{s}{\n \sqbracket{\n2 / \alpha}}{A}
+      |}{\lfjd{\env}{\n2 \cdot s}{\forall \alpha. \n}{A}}
+  |});
+
+  +p {
+    Positive coterms:
+  }
+
+  +math-list (${
+    | \derive{|}{\ljd{\env}{\star}{\p}{\p}}
+    | \derive{|\cjd{c}{\env, x \colon \p}{A}|}{\ljd{\env}{\mu x. c}{\p}{A}}
+    | \derive{|\cjd{c}{\env}{A}|}{\ljd{\env}{\mu \angle-bracket{}. c}{1}{A}}
+    | \derive{
+        | \cjd{c_1}{\env, x \colon \p_1}{A}
+        | \cjd{c_2}{\env, x \colon \p_2}{A}
+      |}{\ljd{\env}{\mu \paren{\iota_1 x. c_1 \| \iota_2 x. c_2}}{\p_1 \oplus \p_2}{A}}
+    | \derive{
+        | \cjd{c}{\env, u \colon \n}{A}
+      |}{\ljd{\env}{\mu \down u. c}{\down \n}{A}}
+  |});
+
+  +p {
+    Commands:
+  }
+
+  +math-list (${
+    | \derive{
+        | \tyjd{\env}{e^+}{\p}
+        | \ljd{\env}{k^+}{\p}{A}
+      |} {\cjd{\angle-bracket{e^+ \| k^+}}{\env}{A}}
+    | \derive{
+        | \tyjd{\env}{e^-}{\n}
+        | \ljd{\env}{k^-}{\n}{A}
+      |} {\cjd{\angle-bracket{e^- \| k^-}}{\env}{A}}
+    | \derive{
+      |} {\cjd{\fail}{\env}{A}}
+  |});
+
+  +p {
+    We can provide derived forms.
+
+    \align
+      [ ${|\text!{Negative types:}||}
+      ; ${|\n_1 \rightarrow \n_2 |\equiv \down \n_1 \imp \n_2|}
+      ; ${|\unit |\equiv \up 1|}
+      ; ${|\n_1 + \n_2 |\equiv \up \paren{\down \n_1 \oplus \down \n_2}|}
+
+      ; ${|\text!{Negative terms:}||}
+      ; ${|\paren{e^-_1, e^-_2} |\equiv \mu \paren{\pi_1 \star. \angle-bracket{e^-_1\|\star} \| \pi_2 \star. \angle-bracket{e^-_2\|\star}}|}
+      ; ${|\pi_i e^- |\equiv \mu \star. \angle-bracket{e^- \|\pi_i \star}|}
+      ; ${|\lambda u. e^- |\equiv \mu \paren{x \cdot \star}. \angle-bracket{x \| \mu \down u. \angle-bracket{e^- \| \star}}|}
+      ; ${|\apply{e^-_1}{e^-_2} |\equiv \mu \star. \angle-bracket{e^-_1 \| \down e^-_2 \cdot \star}|}
+      ; ${|\Lambda \alpha. e^- |\equiv \mu \paren{\alpha \cdot \star}. \angle-bracket{e^- \| \star}|}
+      ; ${|\apply{e^-}{\n} |\equiv \mu \star. \angle-bracket{e^- \| \n \cdot \star}|}
+
+      ; ${|\paren{} |\equiv \mu \up \star. \angle-bracket{\angle-bracket{} \| \star}|}
+      ; ${|\case{e^-_1}{\paren{}. e^-_2} |\equiv \mu \star. \angle-bracket{e^-_1 \| \up \mu \angle-bracket{}. \angle-bracket{e^-_2\|\star}}|}
+      ; ${|\iota_i e^- |\equiv \mu \up \star. \angle-bracket{\iota_i \paren{\down e^-} \| \star}|}
+      ; ${|\case{e^-}{\iota_1 u. e^-_1 \| \iota_2 u. e^-_2} |\equiv \mu \star. \angle-bracket{e^- \| \up \mu \paren{\iota_1 x. \angle-bracket{x \| \mu \down u. \angle-bracket{e^-_1\|\star}} \| \iota_2 x. \angle-bracket{\mu \down u. \angle-bracket{e^-_2\|\star}}}}|}
+      ; ${|\fail |\equiv \mu \star. \fail|}
+      ];
+  }
+>

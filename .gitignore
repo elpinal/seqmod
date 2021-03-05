@@ -1,0 +1,8 @@
+*.satysfi-aux
+
+MLB/
+
+seqmod-mlkit
+seqmod-mlton
+
+make_parser.sml

@@ -1,0 +1,2 @@
+purity: pure
+{EQ=∃!22, !23.{eq(=!23):!22 & !22 -> unit + unit, t(=!22):Type}, ORD=∃!24, !25, !26.{eq(=!25):!24 & !24 -> unit + unit, less(=!26):!24 & !24 -> unit + unit, t(=!24):Type}, SET=∃!27, !28, !29, !30, !31.{add(=!30):!28 & !27 -> !27, empty(=!29):!27, mem(=!31):!28 & !27 -> unit + unit, elem(=!28):Type, set(=!27):Type}, bool(=unit + unit):Type}
